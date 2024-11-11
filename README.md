@@ -56,65 +56,47 @@ data/
 
 ## Processing Pipeline
 
-### 1. CombineAllGeneDescription.py
-**Purpose**: Combines gene descriptions from multiple species into a single standardized format.
+### Purpose and Validation Strategy
+The processing pipeline serves multiple critical functions:
 
-**Input**:
-- `data/raw/GeneDescriptions/*.tsv` files containing gene descriptions for each species
-  - Format: Tab-separated files with columns: geneId, Symbol, Description
+1. **Data Standardization**: The scripts consolidate gene information from multiple species databases into a single file.
 
-**Output**:
-- `data/processed/GeneDescriptions/gene_nodes.csv`
-  - Columns: database, geneId, Symbol, Description, Species
-  - All text fields are quoted
-- `data/processed/GeneDescriptions/species_metadata.json`
-  - Contains list of unique databases and species
+2. **ID Validation Challenge**: A key challenge is that molecular interactions often reference genes using various ID formats rather than the standardized IDs from gene descriptions. For example:
+   - Gene descriptions use database-specific IDs (e.g., Xenbase)
+   - Molecular interactions may reference Entrez Gene/LocusLink IDs
+   - Matching IDs from gene descriptions may appear in the synonym section of the molecular interaction file
 
-### 2. getSynym.py
-**Purpose**: Processes molecular interaction data to build a dictionary of gene synonyms across species.
+3. **Synonym Resolution**: To address this:
+   - `getSynonym.py` builds a comprehensive synonym dictionary from molecular interaction data
+   - This maps alternative gene identifiers to their canonical IDs from gene descriptions
+   - Structure: `taxon_id → gene_id → [list of known synonyms] → source database`
 
-**Input**:
-- `data/raw/MolecularInteractions/INTERACTION-MOL_COMBINED.tsv`
-  - Tab-separated file containing molecular interactions
-- Gene descriptions from step 1
+4. **Validation Process**:
+   - All interactions are validated against  gene IDs from gene descriptions
+   - Interactions are classified as:
+     - Valid: Both interacting genes have matching  IDs from gene descriptions
+     - Invalid: One or both genes cannot be mapped to canonical IDs
+   - Statistics are generated to track validation success rates per species
 
-**Output**:
-- `data/processed/gene_synonyms.json`
-  - Hierarchical dictionary organized by:
-    - taxon_id → gene_id → synonym → database_name
+### Script Workflow
+1. `CombineAllGeneDescription.py`: Establishes canonical gene IDs and descriptions
+2. `getSynonym.py`: Creates ID mapping infrastructure for validation
+3. **GeneInteractionProcessor.py**: Processes and validates genetic interactions
+   - Extracts genetic interactions from INTERACTION-GEN_COMBINED.tsv
+   - Maps gene IDs to their canonical forms using the synonym dictionary
+   - Validates interaction pairs against gene descriptions
+   - Outputs:
+     - extracted_genetic_interactions.csv: Raw extracted interactions
+     - valid_interactions.csv: Interactions where both genes are validated
+     - invalid_interactions.csv: Interactions with unmappable gene IDs
+     - interactions_stats.csv: Validation statistics per species
+4. `validate_gene_interactions.py`: Performs final validation and generates reports
 
-### 3. GeneInteractionProcessor.py
-**Purpose**: Processes genetic interaction data, mapping gene IDs using synonyms dictionary.
-
-**Input**:
-- `data/raw/GeneticInteractions/INTERACTION-GEN_COMBINED.tsv`
-  - Tab-separated file containing genetic interactions
-- `data/processed/gene_synonyms.json` from step 2
-
-**Output**:
-- `data/processed/GeneticInteractions/extracted_genetic_interactions.csv`
-  - Columns: database, taxonId, fromGeneId, toGeneId
-- `data/processed/GeneticInteractions/species_metadata.json`
-  - Contains validation summary and examples per species
-
-### 4. validate_gene_interactions.py
-**Purpose**: Validates processed genetic interactions against gene descriptions.
-
-**Input**:
-- `data/processed/GeneticInteractions/extracted_genetic_interactions.csv` from step 3
-- `data/processed/GeneDescriptions/gene_nodes.csv` from step 1
-
-**Output**:
-- `data/processed/GeneticInteractions/valid_interactions.csv`
-  - Contains only interactions where both genes exist in descriptions
-- `data/processed/GeneticInteractions/invalid_interactions.csv`
-  - Contains interactions where at least one gene is missing
-- `data/processed/GeneticInteractions/interactions_stats.csv`
-  - Statistical summary of valid/invalid interactions by species and database
+This validation ensures data integrity and provides transparency about data quality across different species databases.
 
 ## Execution Order
 1. Run `CombineAllGeneDescription.py` first to create unified gene descriptions
-2. Run `getSynym.py` to build gene synonyms dictionary
+2. Run `getSynonym.py` to build gene synonyms dictionary
 3. Run `GeneInteractionProcessor.py` to process genetic interactions
 4. Run `validate_gene_interactions.py` to validate and filter interactions
 
