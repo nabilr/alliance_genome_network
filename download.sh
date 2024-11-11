@@ -1,6 +1,9 @@
 # Create directories first
 mkdir -p data/raw/{Disease,GeneDescriptions,GeneticInteractions,MolecularInteractions,Orthology}
 
+# Create processed directory structure
+mkdir -p data/processed/{GeneDescriptions,GeneticInteractions}
+
 # Download files (using latest release URL pattern)
 wget -P data/raw/Disease/ https://fms.alliancegenome.org/download/DISEASE-ALLIANCE_COMBINED.tsv
 
@@ -16,4 +19,4 @@ wget -P data/raw/GeneDescriptions/ https://fms.alliancegenome.org/download/GENE-
 
 wget -P data/raw/GeneticInteractions/ https://fms.alliancegenome.org/download/INTERACTION-GEN_COMBINED.tsv
 wget -P data/raw/MolecularInteractions/ https://fms.alliancegenome.org/download/INTERACTION-MOL_COMBINED.tsv
-wget -P data/raw/Orthology/ https://fms.alliancegenome.org/download/ORTHOLOGY-ALLIANCE_COMBINED.tsv
+wget -P data/raw/Orthology/ https://fms.alliancegenome.org/download/ORTHOLOGY-ALLIANCE_COMBINED.tsva
